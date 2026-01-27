@@ -1,0 +1,96 @@
+{
+  "filePatterns": [
+    {
+      "pattern": "prisma|schema\\.prisma",
+      "flags": "i",
+      "item": "- [ ] Prisma schema changes have been validated and migrations created if needed"
+    },
+    {
+      "pattern": "\\.tsx?$|\\.jsx?$",
+      "flags": "i",
+      "item": "- [ ] Component changes have been tested in different browsers/devices"
+    },
+    {
+      "pattern": "api/|server/|route\\.",
+      "flags": "i",
+      "item": "- [ ] API changes have been tested and documented"
+    },
+    {
+      "pattern": "\\.css$|\\.scss$|tailwind",
+      "flags": "i",
+      "item": "- [ ] UI changes look good on all screen sizes"
+    },
+    {
+      "pattern": "\\.test\\.|\\.spec\\.|\\.e2e",
+      "flags": "i",
+      "item": "- [ ] Tests are meaningful and cover critical paths"
+    },
+    {
+      "pattern": "\\.env|config|secrets",
+      "flags": "i",
+      "item": "- [ ] No secrets committed, environment variables documented"
+    },
+    {
+      "pattern": "migration|migrations",
+      "flags": "i",
+      "item": "- [ ] Database migrations are tested and have rollback plan"
+    },
+    {
+      "pattern": "controller|service|module",
+      "flags": "i",
+      "item": "- [ ] Dependency injection and error handling reviewed"
+    }
+  ],
+  "contentPatterns": [
+    {
+      "pattern": "useEffect|useState|useContext",
+      "flags": "i",
+      "item": "- [ ] React hooks usage has been reviewed for potential issues (dependencies, cleanup)"
+    },
+    {
+      "pattern": "fetch\\(|axios\\.|http\\.",
+      "flags": "i",
+      "item": "- [ ] API calls include proper error handling and timeout configuration"
+    },
+    {
+      "pattern": "password|token|secret|key|auth|jwt|session",
+      "flags": "i",
+      "item": "- [ ] Security-sensitive code has been reviewed for vulnerabilities"
+    },
+    {
+      "pattern": "prisma\\.|\\.create\\(|\\.update\\(|\\.delete\\(",
+      "flags": "i",
+      "item": "- [ ] Database operations use transactions where needed and handle errors"
+    },
+    {
+      "pattern": "console\\.(log|error|warn)",
+      "flags": "i",
+      "item": "- [ ] Debug statements removed or replaced with proper logging"
+    },
+    {
+      "pattern": "TODO|FIXME|XXX|HACK",
+      "flags": "i",
+      "item": "- [ ] Technical debt markers addressed or justified"
+    },
+    {
+      "pattern": "any\\s|@ts-ignore|@ts-expect-error",
+      "flags": "i",
+      "item": "- [ ] Type safety maintained, type assertions justified"
+    },
+    {
+      "pattern": "process\\.env\\.",
+      "flags": "i",
+      "item": "- [ ] Environment variables are validated and have defaults where appropriate"
+    },
+    {
+      "pattern": "throw new|throw Error",
+      "flags": "i",
+      "item": "- [ ] Exceptions are caught and handled appropriately"
+    },
+    {
+      "pattern": "await.*await|Promise\\.all",
+      "flags": "i",
+      "item": "- [ ] Async operations are properly awaited and errors handled"
+    }
+  ]
+}
