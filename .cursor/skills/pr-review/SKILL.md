@@ -9,6 +9,27 @@ description: Reviews pull requests focusing only on critical issues and must-fix
 
 **Only report critical issues and must-fix items.** Skip suggestions, style preferences, and minor improvements. Focus on bugs, security vulnerabilities, breaking changes, and issues that will cause production problems.
 
+## Before Starting: Sync Repo and Fetch PR Branch
+
+**Do this first**, before reading files or running the review:
+
+1. **Pull latest develop**, then **fetch and checkout the PR branch** so the review runs on up-to-date code:
+   ```bash
+   git fetch origin develop && git pull origin develop
+   git fetch origin <branch-name> && git checkout <branch-name>
+   ```
+   Use the repo's default remote (usually `origin`). If the user specified another remote, use that.
+2. **Identify the PR branch** from context (PR URL, branch name mentioned by the user, or current branch).
+3. **If the branch cannot be found** (fetch fails, or `git rev-parse` doesn't find the branch):
+   - **Ask the user**: "I couldn't find the PR branch. Please give me the branch name, or confirm it's pushed to the remote."
+   - Do not proceed with the review until the branch is available or the user provides the correct branch name.
+
+Only after the branch is checked out (or the user has confirmed which branch to use) should you proceed with the review.
+
+## Linear Ticket Context (user-Linear MCP)
+
+If the PR references a Linear ticket (e.g. branch name like `ENG-123`, or PR title/body with ticket ID), call **user-Linear** MCP **get_issue** (arg: `id`) to load the ticket before reviewing. Use the ticket title, description, and acceptance criteria to align the review with intended scope and edge cases.
+
 ## Review Strategy
 
 ### 1. Query Memory First
@@ -146,22 +167,24 @@ contentPatterns: [
 
 ## Review Workflow
 
-1. **Initial Assessment**
+1. **Sync repo and fetch PR branch** (see "Before Starting: Sync Repo and Fetch PR Branch" above). If the branch isn't found, ask the user for the branch name and stop until they respond.
+
+2. **Initial Assessment**
    - Read PR description and check for breaking changes
    - Identify affected areas (API, database, frontend, etc.)
    - Query memory for related context
 
-2. **Scoped File Review**
+3. **Scoped File Review**
    - Filter files by type/pattern
    - Review critical files first (auth, data access, API routes)
    - Use grep/search to find pattern matches
 
-3. **Pattern Application**
+4. **Pattern Application**
    - Apply file pattern checks
    - Scan content for critical patterns
    - Verify checklist items
 
-4. **Issue Reporting**
+5. **Issue Reporting**
    - Group similar issues
    - Prioritize by severity (Critical > Must Fix > Important)
    - Provide specific file locations and line numbers
