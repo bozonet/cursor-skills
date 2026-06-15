@@ -28,7 +28,16 @@ Only after the branch is checked out (or the user has confirmed which branch to 
 
 ## Linear Ticket Context (user-Linear MCP)
 
-If the PR references a Linear ticket (e.g. branch name like `ENG-123`, or PR title/body with ticket ID), call **user-Linear** MCP **get_issue** (arg: `id`) to load the ticket before reviewing. Use the ticket title, description, and acceptance criteria to align the review with intended scope and edge cases.
+If the PR references a Linear ticket (e.g. branch name like `ENG-123`, or PR title/body with ticket ID):
+
+1. Call **user-Linear** MCP **get_issue** (arg: `id`) to load the ticket description, acceptance criteria, and scope.
+2. Call **user-Linear** MCP **list_comments** (arg: `issueId`) to read the full discussion thread — **not just the description**.
+
+**Ticket comments can supersede the original description.** Stakeholders often clarify or change requirements in comments after the ticket is written (e.g. switching from `endsWith('phone')` to `includes('phone')` after a dev asks which matching rule to use). Treat an explicit stakeholder approval in comments as the current spec.
+
+- Do **not** flag a PR as non-compliant when implementation matches a comment-approved approach, even if it differs from the original ticket wording.
+- Do **not** assume the description alone is authoritative — always check comments before raising spec-mismatch findings.
+- If description and comments conflict and there is no clear resolution, note the ambiguity briefly; do not treat it as a must-fix unless it causes a real bug.
 
 ## Review Strategy
 
@@ -171,6 +180,7 @@ contentPatterns: [
 
 2. **Initial Assessment**
    - Read PR description and check for breaking changes
+   - If a Linear ticket is linked, load it with `get_issue` **and** `list_comments` (comments may override description)
    - Identify affected areas (API, database, frontend, etc.)
    - Query memory for related context
 
@@ -220,6 +230,7 @@ The pattern lists above can be extended. Add new patterns to `filePatterns` or `
 
 ## Anti-Patterns to Avoid
 
+- ❌ Don't flag spec mismatches against a ticket description when comments already approved the implementation
 - ❌ Don't comment on code style unless it causes bugs
 - ❌ Don't suggest refactoring unless it fixes a critical issue
 - ❌ Don't nitpick variable names or formatting
