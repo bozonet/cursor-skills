@@ -7,6 +7,8 @@ description: Creates a selective develop-to-master release from the current spri
 
 Creates a **selective** release: only current sprint's **Ready to Deploy** tickets that have PRs in this repo. Not a full develop → master merge.
 
+> **Conflict rule (read first):** Cherry-picks are point-in-time snapshots; `origin/develop` is the newest integrated truth for files touched by multiple release PRs. Never use merge strategies (`-X ours` / `-X theirs`) or `git add -A` during conflicts. Resolve per-file, then sync conflicted/multi-PR files from develop, then run `npm run typecheck` before pushing.
+
 ## Workflow
 
 ### 0. Find Linear MCP
@@ -42,9 +44,39 @@ Match lines like `abc123 Title (#1733)` to get commit hashes for each PR number.
 ### 4. Create release branch and cherry-pick
 
 - Branch name: `release/<short-date>` (e.g. `release/feb-2`).
-- Create from `origin/master`: `git checkout -b release/<date> origin/master`.
-- Cherry-pick commits one by one (oldest first). Resolve conflicts; keep master's deletions for removed files (e.g. coverage workflow). Use `git commit --no-verify` if pre-commit hooks block. Unstage and do not commit `.cursor/` or other local-only paths.
-- If a commit touches files deleted on master (e.g. `.github/workflows/coverage.yml`): resolve by keeping them deleted (`git rm` those paths), then commit.
+- Create from `origin/master`: `git checkout -B release/<date> origin/master`.
+- Cherry-pick commits one by one (oldest first). Use `git commit --no-verify` if pre-commit hooks block. Do not commit `RELEASE_*.md`, `.cursor/`, or other local-only paths.
+
+#### On conflict (per file — no auto-merge)
+
+1. List conflicts: `git diff --name-only --diff-filter=U`
+2. Take the **incoming PR commit's** version (not git's half-merged hunks): `git show <commit>:<path> > <path>` then `git add <path>`
+3. modify/delete on master → keep deleted: `git rm <path>`
+4. Finish: `git commit --no-verify -F .git/MERGE_MSG` (or `git cherry-pick --skip` if the pick is now empty)
+
+**FORBIDDEN:** `-X theirs`, `-X ours`, `git add -A` during conflicts, leaving `<<<<<<<` markers.
+
+#### After ALL picks — develop sync (required)
+
+Cherry-picks are point-in-time; `origin/develop` is the newest integrated truth for any file touched by more than one release PR (or by a much older pick like a multi-month-old feature).
+
+1. Collect files changed by included commits:
+   `for c in <commit-list>; do git diff-tree --no-commit-id --name-only -r $c; done | sort -u`
+2. For each file that **conflicted** OR was **modified by 2+ included commits**, sync to develop:
+   `git checkout origin/develop -- <path>`
+3. Verify it now matches develop (should be empty): `git diff origin/develop -- <path>`
+4. Keep a master-only version only when it is a **deliberate** master deletion or a hotfix already on master (see edge cases below).
+
+#### Validate before push (do NOT push if any fail)
+
+- `npm run typecheck`
+- No real conflict markers: `rg '<<<<<<< HEAD|>>>>>>> '` returns nothing
+- No master code silently vanished: spot-check `git diff origin/master -- <high-conflict files>` and confirm only intended changes
+
+#### Edge cases
+
+- **Stacked PRs:** if a Linear ticket's PR was merged into another PR's branch (not directly into develop), include it via the **parent PR's develop merge commit**, not the stacked PR's standalone commit. Note this in the RELEASE doc.
+- **Master hotfixes already shipped:** if a ticket's fix already landed on master (e.g. a hotfix PR targeting master), it is already on the release base — **skip the duplicate cherry-pick** and mark "already on master" in the RELEASE doc.
 
 ### 5. Document the release
 
@@ -64,11 +96,27 @@ Create **RELEASE_&lt;date&gt;.md** in repo root with (do **not** commit it—lea
 
 Agent cannot push without credentials. Tell the user to run `git push -u origin release/<date>` and open the PR on GitHub (base: master, compare: release branch).
 
-## Conflict resolution tips
+## Conflict resolution (decision table)
 
-- **modify/delete**: Keep master's version (deleted) → `git rm <path>`, then continue.
-- **Content conflicts**: Prefer the **incoming** (cherry-picked) change for feature code; only keep master when it's a deliberate removal or branch-specific fix.
-- **Missing context/variables**: If a cherry-pick references a variable or type the branch doesn't have, add it to the relevant context, provider, or types so the code compiles and runs.
+| Situation | Resolution |
+| --- | --- |
+| Code from the PR being picked | Take that commit's version: `git show <commit>:path` |
+| File touched by multiple release PRs | After all picks: `git checkout origin/develop -- path` (develop = newest truth) |
+| modify/delete on master | Keep deleted: `git rm <path>` |
+| Old pick conflicts with newer state | **develop wins** — never resolve to a stale old-commit version |
+| Hotfix already on master | Keep master, skip the duplicate pick |
+| Missing context/variables after pick | Add the referenced var/type/provider so it compiles; re-run `npm run typecheck` |
+
+**Never** use `-X ours` / `-X theirs` or `git add -A` to resolve conflicts — both silently discard the wrong side. Resolve per-file, then develop-sync, then typecheck.
+
+### High-conflict files in CareSuite (always develop-sync after picks)
+
+- `apps/care/src/core/case/export-job.service.ts`
+- `apps/care/src/core/case/case.module.ts`
+- `apps/provider-portal/src/core/annual-update/*.ts`
+- `clients/apps/provider-portal/src/layouts/SectionRenderer.tsx`
+- `clients/apps/provider-portal/src/pages/AnnualUpdateReview.tsx`
+- `clients/apps/provider-portal/src/state/attribute.tsx`
 
 ## Output summary for user
 
